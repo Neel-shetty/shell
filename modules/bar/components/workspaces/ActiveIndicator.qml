@@ -13,7 +13,19 @@ StyledRect {
     required property real maskHeight
     required property int groupOffset
 
-    readonly property int currentWsIdx: Hyprland.activeWsId - 1 - groupOffset
+    // Find the index of the active workspace in our filtered workspace list
+    readonly property int currentWsIdx: {
+        for (let i = 0; i < workspaces.length; i++) {
+            if (workspaces[i].ws === Hyprland.activeWsId) {
+                return i;
+            }
+        }
+        return -1; // Active workspace not on this monitor
+    }
+    
+    // Only show indicator if active workspace is on this monitor
+    visible: currentWsIdx >= 0
+    
     property real leading: getWsY(currentWsIdx)
     property real trailing: getWsY(currentWsIdx)
     property real currentSize: workspaces[currentWsIdx]?.size ?? 0

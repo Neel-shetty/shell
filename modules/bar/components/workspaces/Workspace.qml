@@ -12,14 +12,16 @@ Item {
     required property int index
     required property var occupied
     required property int groupOffset
+    required property var monitorWorkspaces // Add this to pass the filtered workspace list
 
     readonly property bool isWorkspace: true // Flag for finding workspace children
     // Unanimated prop for others to use as reference
     readonly property real size: childrenRect.height + (hasWindows ? Appearance.padding.normal : 0)
 
-    readonly property int ws: groupOffset + index + 1
+    readonly property int ws: monitorWorkspaces[index] // Use the actual workspace ID from the filtered list
     readonly property bool isOccupied: occupied[ws] ?? false
     readonly property bool hasWindows: isOccupied && BarConfig.workspaces.showWindows
+    readonly property bool isActive: Hyprland.activeWsId === ws // Check if this specific workspace is active
 
     Layout.preferredWidth: childrenRect.width
     Layout.preferredHeight: size
@@ -32,8 +34,8 @@ Item {
         readonly property string activeLabel: BarConfig.workspaces.activeLabel || (root.isOccupied ? occupiedLabel : label)
 
         animate: true
-        text: Hyprland.activeWsId === root.ws ? activeLabel : root.isOccupied ? occupiedLabel : label
-        color: BarConfig.workspaces.occupiedBg || root.isOccupied || Hyprland.activeWsId === root.ws ? Colours.palette.m3onSurface : Colours.palette.m3outlineVariant
+        text: root.isActive ? activeLabel : root.isOccupied ? occupiedLabel : label
+        color: BarConfig.workspaces.occupiedBg || root.isOccupied || root.isActive ? Colours.palette.m3onSurface : Colours.palette.m3outlineVariant
         horizontalAlignment: StyledText.AlignHCenter
         verticalAlignment: StyledText.AlignVCenter
 

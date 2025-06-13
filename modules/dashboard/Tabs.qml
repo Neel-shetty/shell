@@ -107,10 +107,13 @@ Item {
             implicitHeight: icon.height + label.height
 
             cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+
+            onEntered: {
+                tab.TabBar.tabBar.setCurrentIndex(tab.TabBar.index);
+            }
 
             onPressed: ({x,y}) => {
-                tab.TabBar.tabBar.setCurrentIndex(tab.TabBar.index);
-
                 const stateY = stateWrapper.y;
                 rippleAnim.x = x;
                 rippleAnim.y = y - stateY;

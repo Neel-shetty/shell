@@ -9,12 +9,48 @@ import QtQuick.Layouts
 Item {
     id: root
 
+    required property string monitorName
+
     readonly property list<Workspace> workspaces: layout.children.filter(c => c.isWorkspace).sort((w1, w2) => w1.ws - w2.ws)
     readonly property var occupied: Hyprland.workspaces.values.reduce((acc, curr) => {
         acc[curr.id] = curr.lastIpcObject.windows > 0;
         return acc;
     }, {})
-    readonly property int groupOffset: Math.floor((Hyprland.activeWsId - 1) / BarConfig.workspaces.shown) * BarConfig.workspaces.shown
+    
+    // Get workspaces assigned to this monitor
+    readonly property var monitorWorkspaces: {
+        const monitor = Hyprland.monitors.values.find(m => m.name === monitorName);
+        if (!monitor) {
+            return [];
+        }
+        
+        // Get all workspaces for this monitor
+        const wsIds = Hyprland.workspaces.values
+            .filter(ws => {
+                return ws.monitor.name === monitorName;
+            })
+            .map(ws => ws.id)
+            .sort((a, b) => a - b);
+        
+        return wsIds;
+    }
+    
+    readonly property int minWorkspace: {
+        const min = monitorWorkspaces.length > 0 ? Math.min(...monitorWorkspaces) : 1;
+        return min;
+    }
+    readonly property int maxWorkspace: {
+        const max = monitorWorkspaces.length > 0 ? Math.max(...monitorWorkspaces) : BarConfig.workspaces.shown;
+        return max;
+    }
+    readonly property int workspaceCount: {
+        const count = monitorWorkspaces.length > 0 ? monitorWorkspaces.length : BarConfig.workspaces.shown;
+        return count;
+    }
+    readonly property int groupOffset: {
+        const offset = minWorkspace - 1;
+        return offset;
+    }
 
     implicitWidth: layout.implicitWidth
     implicitHeight: layout.implicitHeight
@@ -27,11 +63,12 @@ Item {
         layer.smooth: true
 
         Repeater {
-            model: BarConfig.workspaces.shown
+            model: root.workspaceCount
 
             Workspace {
                 occupied: root.occupied
                 groupOffset: root.groupOffset
+                monitorWorkspaces: root.monitorWorkspaces
             }
         }
     }
@@ -67,9 +104,12 @@ Item {
         anchors.fill: parent
 
         onPressed: event => {
-            const ws = layout.childAt(event.x, event.y).index + root.groupOffset + 1;
-            if (Hyprland.activeWsId !== ws)
-                Hyprland.dispatch(`workspace ${ws}`);
+            const workspaceComponent = layout.childAt(event.x, event.y);
+            if (workspaceComponent && workspaceComponent.ws) {
+                const ws = workspaceComponent.ws;
+                if (Hyprland.activeWsId !== ws)
+                    Hyprland.dispatch(`workspace ${ws}`);
+            }
         }
     }
 }
